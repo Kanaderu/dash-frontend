@@ -1,0 +1,11 @@
+dash
+dash-bootstrap-components
+plotly
+jupyter-dash
+jupyterlab
+opencv-contrib-python-headless
+pandas
+numpy
+matplotlib
+scikit-learn
+scipy
