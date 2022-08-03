@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build: .
+    working_dir: /app
+    command: python app.py
+    environment:
+      - PORT=8888
+    ports:
+      - 8888:8888
+    volumes:
+      - ./:/app

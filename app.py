@@ -1,3 +1,4 @@
+import os
 import datetime
 import base64
 
@@ -119,7 +120,7 @@ def parse_contents(contents, filename, date):
         ), axis=1)[0],
     })
     fig = px.histogram(df, x="data", color="channel", barmode="overlay")
-    fig.show()
+    #fig.show()
     return html.Div([
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
@@ -147,4 +148,5 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         return children
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8888)
+    port = int(os.getenv("PORT", "8080"))
+    app.run_server(debug=True, port=port)
