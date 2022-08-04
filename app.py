@@ -76,6 +76,7 @@ def render_page_content(pathname):
                     'Drag and Drop or ',
                     html.A('Select Files')
                 ]),
+                accept='image/*',
                 style={
                     'width': '100%',
                     'height': '60px',
@@ -101,16 +102,16 @@ def render_page_content(pathname):
     )
 
 def parse_contents(contents, filename, date):
-    #df = pd.DataFrame({
-    #    "blue": np.ndarray.flatten(img[:,:,0]),
-    #    "green": np.ndarray.flatten(img[:,:,1]),
-    #    "red": np.ndarray.flatten(img[:,:,2]),
-    #})
+    # decode data
     encoded_data = contents.split(',')[1]
     img_bytes = np.frombuffer(base64.b64decode(encoded_data), dtype=np.uint8)
     img = cv2.imdecode(img_bytes, cv2.IMREAD_COLOR)
+
+    # image metadata
     img_size = np.shape(img)[:2]
     img_flat_size = img_size[0] * img_size[1]
+
+    # histogram dataframe
     df = pd.DataFrame({
         "data": np.ndarray.flatten(img),
         "channel": np.concatenate((
@@ -119,21 +120,48 @@ def parse_contents(contents, filename, date):
             np.ones((1,img_flat_size))*2,
         ), axis=1)[0],
     })
-    fig = px.histogram(df, x="data", color="channel", barmode="overlay")
-    #fig.show()
-    return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
 
-        # HTML images accept base64 encoded strings in the same format
-        # that is supplied by the upload
-        html.Img(src=contents, width="30%"),
-        html.Hr(),
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
+    # original image
+    fig_orig = px.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    # histogram
+    fig_hist = px.histogram(df, x="data", color="channel", barmode="overlay")
+
+    # grayscale
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    fig_gray = px.imshow(img_gray, color_continuous_scale='gray')
+
+    return html.Div([
+        dbc.Card(
+            dbc.CardBody([
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(filename),
+                        html.H6(datetime.datetime.fromtimestamp(date)),
+                    ], width=12),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        # HTML images accept base64 encoded strings in the same format
+                        # that is supplied by the upload
+                        #html.Img(src=contents),
+                        dcc.Graph(figure=fig_orig),
+                    ], width=4),
+                    dbc.Col([
+                        dcc.Graph(figure=fig_hist),
+                    ], width=4),
+                    dbc.Col([
+                        dcc.Graph(figure=fig_gray),
+                    ], width=4),
+                ], align='center'),
+                html.Hr(),
+                html.Div('Raw Content'),
+                html.Pre(contents[0:200] + '...', style={
+                    'whiteSpace': 'pre-wrap',
+                    'wordBreak': 'break-all'
+                })
+            ]),
+        ),
     ])
 
 @app.callback(Output('output-image-upload', 'children'),
